@@ -21,19 +21,23 @@
 
 import os
 import time
+
+import matplotlib
+matplotlib.use('qt5agg')
 import matplotlib.pyplot as plt
 import datetime
 
 import controller
 #
 
-'''
-import gtk
+
+
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
-'''
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+
 #
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox, QVBoxLayout
 
 global datafile
 
@@ -75,7 +79,7 @@ def write(type, data, message):
 
 
 def createPlot(x, y1, y2, heat_time, coefficients_center, coefficients_edge, original_center_values,
-               original_edge_values):
+               original_edge_values, window):
     # getting the current time and date
     now = datetime.datetime.now()
 
@@ -95,16 +99,42 @@ def createPlot(x, y1, y2, heat_time, coefficients_center, coefficients_edge, ori
     pid_center_string = "center - [" + original_center_string + "," + new_center_string + "]"
     pid_edge_string = "edge - [" + original_edge_string + "," + new_edge_string + "]"
 
-    '''
-    plt.figure(1)
-    fig = plt.gcf()
-    fig.set_size_inches(12, 10)
 
-    plt.plot(x, y1, 'r', x, y2, 'b')
-    plt.ylabel('Temperature (C)')
-    plt.xlabel('Time From Start (s)')
-    plt.title('Heating Characteristics for ' + pid_center_string + ' ' + pid_edge_string)
-    '''
+    #GUI graphing
+    window.graphWidget.figure = plt.figure()
+    window.graphWidget.canvas = FigureCanvas(window.graphWidget.figure)
+    window.graphWidget.toolbar = NavigationToolbar(window.graphWidget.canvas, window)
+
+    window.graphWidget.layout = QVBoxLayout()
+    window.graphWidget.layout.addWidget(window.graphWidget.toolbar)
+    window.graphWidget.layout.addWidget(window.graphWidget.canvas)
+
+    window.graphWidget.setLayout(window.graphWidget.layout)
+
+
+    # instead of ax.hold(False)
+    window.graphWidget.figure.clear()
+
+    # create an axis
+    window.graphWidget.ax = window.graphWidget.figure.add_subplot(111)
+
+    # discards the old graph
+    # ax.hold(False) # deprecated, see above
+
+    # plot data
+    window.graphWidget.ax.plot(x, y1, 'r', x, y2, 'b')
+    window.graphWidget.ax.set_xlabel('Time From Start (s)')
+    window.graphWidget.ax.set_ylabel('Temperature (C)')
+    window.graphWidget.ax.set_title('Heating Characteristics for ' + pid_center_string + ' ' + pid_edge_string)
+
+
+    # refresh canvas
+    window.graphWidget.canvas.draw()
+    window.update()
+
+
+
+    #GUI graphing
 
     # the original pdf that will be saved as a pdf
     fig_original = plt.figure()
@@ -115,31 +145,6 @@ def createPlot(x, y1, y2, heat_time, coefficients_center, coefficients_edge, ori
     plt.xlabel('Time From Start (s)')
     plt.title('Heating Characteristics for ' + pid_center_string + ' ' + pid_edge_string)
 
-    '''
-    win = gtk.Window()
-    win.connect("destroy", lambda x: gtk.main_quit())
-    # win.set_default_size(400,300)
-    win.maximize()
-    win.set_title(pid_center_string + pid_edge_string)
-
-    vbox = gtk.VBox()
-    win.add(vbox)
-
-    fig = Figure(figsize=(5, 4), dpi=100)
-    ax = fig.add_subplot(1, 1, 1)
-    ax.plot(x, y1, 'r', x, y2, 'b')
-    ax.set_xlabel('Time From Start (s)')
-    ax.set_ylabel('Temperature (C)')
-    ax.set_title('Heating Characteristics for ' + pid_center_string + ' ' + pid_edge_string)
-
-    canvas = FigureCanvas(fig)  # a gtk.DrawingArea
-    vbox.pack_start(canvas)
-    toolbar = NavigationToolbar(canvas, win)
-    vbox.pack_start(toolbar, False, False)
-
-    win.show_all()
-    gtk.main()
-    '''
     # saving the figure with a formatted name that includes information about the PID setup and the time and date
     fig_original.savefig(pid_center_string + pid_edge_string + now.strftime("%I:%M%p - %B %d - %Y") + '-graph.pdf')
 
@@ -158,8 +163,10 @@ def write_line_to_log(t_center, t_edge, pwm_center, pwm_edge, curr_t, start_t, c
         t_edge) + '\t' + 'Duty_center: ' + str(round(pwm_center, 3)) + '\t' + 'Duty_edge: ' + str(round(pwm_edge, 3)))
     '''
 
-    window.outputMessage.append('Time: ' + str(d_time) + '\t' + 'Temp_1: ' + str(t_center) + '\t' + 'Temp_2: ' + str(
-        t_edge) + '\t' + 'Duty_center: ' + str(round(pwm_center, 3)) + '\t' + 'Duty_edge: ' + str(round(pwm_edge, 3)))
+    window.outputMessage.append('[Time: ' + str(d_time) + ']\t' + '[Temp_1: ' + str(t_center) + ']\t' + '[Temp_2: ' + str(
+        t_edge) + ']\t' + '[Duty_center: ' + str(round(pwm_center, 3)) + ']\t' + '[Duty_edge: ' + str(round(pwm_edge, 3)) + "]")
+
+    window.outputMessage.update()
 
 def close():
     datafile.close()

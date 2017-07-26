@@ -1,20 +1,13 @@
-'''
-    ************************************************************************
-    *   FILE NAME:      controller.py
-    *   AUTHOR:         Peter Feng
-    *   PURPOSE:        This file contains the class for the Main Window of the GUI and its corresponding functions
-    ************************************************************************
-'''
-
 import sys
 from PyQt5 import QtGui, QtWidgets, uic
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox, QVBoxLayout
 import pid_setup
 
+'''
 import dataLog as log
 import thmcouple as thm
 import heater
-
+'''
 import traceback
 import PID
 import time
@@ -30,7 +23,7 @@ import random
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-        uic.loadUi('heaterGUInew.ui', self)
+        uic.loadUi('heaterGUInewtest.ui', self)
         self.setUp()
         self.temp = 0
         self.P_center = 0
@@ -39,15 +32,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.P_edge = 0
         self.I_edge = 0
         self.D_edge = 0
+        self.mode = "Heater mode"
         # self.show()
 
     def setUp(self):
 
+        '''
         self.outputMessage.append("test string")
         self.outputMessage.append(
-            '[Time: ' + "a]" + '[Temp_1: ' + "b]" + '[Temp_2: ' + "c]" + '\n[Duty_center: ' + "d]" + '[Duty_edge: ' + "e]")
+            '[Time: ' + "a]" + '\t[Temp_1: ' + "b]" + '\t[Temp_2: ' + "c]" + '\n[Duty_center: ' + "d]" + '\t[Duty_edge: ' + "e]")
+        '''
         self.runButton.clicked.connect(self.handleRun)
         self.stopButton.clicked.connect(self.handleStop)
+        self.stopButton.setEnabled(False)
+        self.modeSelection.currentIndexChanged.connect(self.changeIndex)
+
 
         '''
         self.graphWidget.figure = plt.figure()
@@ -77,74 +76,33 @@ class MainWindow(QtWidgets.QMainWindow):
         self.graphWidget.canvas.draw()
         '''
 
+    def changeIndex(self):
+        self.mode = str(self.modeSelection.currentText())
+        if(str(self.modeSelection.currentText()) == "Temperature mode"):
+            self.changeEditStatus(False)
+            self.editClear()
+        else:
+            self.changeEditStatus(True)
+
+    def editClear(self):
+        self.tempEdit.clear()
+        self.pEdit_center.clear()
+        self.iEdit_center.clear()
+        self.dEdit_center.clear()
+        self.pEdit_edge.clear()
+        self.iEdit_edge.clear()
+        self.dEdit_edge.clear()
+
+    def changeEditStatus(self, status):
+        self.tempEdit.setEnabled(status)
+        self.pEdit_center.setEnabled(status)
+        self.iEdit_center.setEnabled(status)
+        self.dEdit_center.setEnabled(status)
+        self.pEdit_edge.setEnabled(status)
+        self.iEdit_edge.setEnabled(status)
+        self.dEdit_edge.setEnabled(status)
+
     def handleRun(self):
-        '''
-        statusTemp = self.checkTemp()
-        if(statusTemp == "enter a temperature"):
-            self.generateMessageBox("Enter Temperature", "Please enter a temperature value")
-        elif(statusTemp == "temperature too high"):
-            self.generateMessageBox("Temperature too high", "The temperature value entered is too high. Please enter a value below 200.")
-        elif(statusTemp == "invalid temperature"):
-            self.generateMessageBox("Invalid temperature", "Please enter a valid temperature")
-        elif(statusTemp  == "valid temperature"):
-            statusP_center = self.checkP("center")
-            statusI_center = self.checkI("center")
-            statusD_center = self.checkD("center")
-
-            statusP_edge = self.checkP("edge")
-            statusI_edge = self.checkI("edge")
-            statusD_edge = self.checkD("edge")
-
-            if(statusP_center == "invalid P"):
-                self.generateMessageBox("Invalid center P", "The center P value entered is invalid. Please enter a valid value")
-            elif(statusP_center == "enter a P"):
-                self.generateMessageBox("Enter center P value", "Please enter a center P value.")
-
-            if(statusI_center == "invalid I"):
-                self.generateMessageBox("Invalid center I", "The center I value entered is invalid. Please enter a valid value")
-            elif(statusI_center == "enter a I"):
-                self.generateMessageBox("Enter center I value", "Please enter a center I value.")
-
-            if(statusD_center == "invalid D"):
-                self.generateMessageBox("Invalid D", "The center D value entered is invalid. Please enter a valid value")
-            elif(statusD_center == "enter a D"):
-                self.generateMessageBox("Enter center D value", "Please enter a center D value.")
-
-
-            if(statusP_edge == "invalid P"):
-                self.generateMessageBox("Invalid edge P", "The edge P value entered is invalid. Please enter a valid value")
-            elif(statusP_edge == "enter a P"):
-                self.generateMessageBox("Enter edge P value", "Please enter an edge P value.")
-
-            if(statusI_edge == "invalid I"):
-                self.generateMessageBox("Invalid edge I", "The edge I value entered is invalid. Please enter a valid value")
-            elif(statusI_edge == "enter a I"):
-                self.generateMessageBox("Enter edge I value", "Please enter an edge I value.")
-
-            if(statusD_edge == "invalid D"):
-                self.generateMessageBox("Invalid D", "The edge D value entered is invalid. Please enter a valid value")
-            elif(statusD_edge == "enter a D"):
-                self.generateMessageBox("Enter edge D value", "Please enter an edge D value.")
-
-            if(statusP_center == "valid P" and statusI_center == "valid I" and statusD_center == "valid D"):
-                center_Valid = True
-            else:
-                center_Valid = False
-
-            if (statusP_edge == "valid P" and statusI_edge == "valid I" and statusD_edge == "valid D"):
-                edge_Valid = True
-            else:
-                edge_Valid = False
-
-            if(center_Valid == True and edge_Valid == True):
-                self.temp = float(self.tempEdit.text())
-                self.P_center = float(self.pEdit_center.text())
-                self.I_center = float(self.iEdit_center.text())
-                self.D_center = float(self.dEdit_center.text())
-                self.P_edge = float(self.pEdit_edge.text())
-                self.I_edge = float(self.iEdit_edge.text())
-                self.D_edge = float(self.dEdit_edge.text())
-            '''
 
         inputStatus = self.checkInput()
 
@@ -168,27 +126,14 @@ class MainWindow(QtWidgets.QMainWindow):
             ################################################################################
             ''' DON'T EDIT THESE UNLESS YOU KNOW WHAT YOU'RE DOING '''
 
-            self.log.setup("PID_cartridge_test")
 
-            self.thm1 = thm.setup1()
-            self.thm2 = thm.setup2()
 
-            self.pwm_1 = heater.setup1()
-            self.pwm_2 = heater.setup2()
 
-            self.pid_edge = pid_setup.pid_setup_edge(self.temp, self.P_edge, self.I_edge, self.D_edge)
-            self.pid_center = pid_setup.pid_setup_center(self.temp, self.P_center, self.I_center, self.D_center)
-
-            self.pid_edge_val = self.pid_edge.getPID()
-            self.pid_center_val = self.pid_center.getPID()
 
             # These variables will have current temp values written to them.
-            self.t_center = thm.read(self.thm1)
-            self.t_edge = thm.read(self.thm2)
 
             # These variables store the temperature averaged over the last two values.
-            self.t_center_avg = self.t_center
-            self.t_edge_avg = self.t_edge
+
 
             # Variables used for timekeeping and data plotting.
             self.start_t = time.time()
@@ -199,8 +144,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.edge_temps = []
 
             self.outputMessage.append("Setup completed, initial heating  ... ")
-            self.runButton.setEnabled(False)
+            self.outputMessage.update()
 
+
+
+
+            self.runButton.setEnabled(False)
+            self.stopButton.setEnabled(True)
+
+            '''
             # change
             try:
                 # Function stored in heater.py. Algorithm based on empirical results.
@@ -223,7 +175,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.pwm_edge = 0
                 heater.change_duty(self.pwm_center, self.pwm_edge, self.pwm_1, self.pwm_2)
 
-                print('Initial heating finished...')
+                self.outputMessage.append('Initial heating finished...')
+                self.update()
                 log.write('LINE', round((time.time() - self.start_t), 2), 'Initial heating finished at: ')
 
                 self.pid_start_t = time.time()
@@ -239,7 +192,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                               self.start_t, self.cent_temps,
                                               self.edge_temps, self.times, self)
 
-                print('PID controller started ...')
+                self.outputMessage.append('PID controller started ...')
+                self.update()
                 log.write('LINE', round((time.time() - self.start_t), 2), 'PID Controller started at: ')
 
                 working = True
@@ -272,25 +226,29 @@ class MainWindow(QtWidgets.QMainWindow):
 
                     # Suppress Kp once the current temp nears the working temp.
                     if ((limited[0][0] == False) and ((self.temp - self.t_center_avg) < 15)):
-                        print("Kp center suppressed ... ")
+                        self.outputMessage.append("Kp center suppressed ... ")
+                        self.update()
                         log.write('LINE', 0, 'Kp center suppressed')
                         self.pid_center.setKp(self.limited_kp)
                         limited[0][0] = True
 
                     if ((limited[1][0] == False) and ((self.temp - self.t_edge_avg) < 15)):
-                        print("Kp edge suppressed ... ")
+                        self.outputMessage.append("Kp edge suppressed ... ")
+                        self.update()
                         log.write('LINE', 0, 'Kp edge suppressed')
                         self.pid_edge.setKp(self.limited_kp)
                         limited[1][0] = True
 
                     if ((limited[0][1] == False) and ((self.temp - self.t_center_avg) < 1)):
-                        print("Kd center suppressed ... ")
+                        self.outputMessage.append("Kd center suppressed ... ")
+                        self.update()
                         log.write('LINE', 0, 'Kd center suppressed')
                         self.pid_center.setKd(self.limited_kd)
                         limited[0][1] = True
 
                     if ((limited[1][1] == False) and ((self.temp - self.t_edge_avg) < 1)):
-                        print("Kd edge suppressed ... ")
+                        self.outputMessage.append("Kd edge suppressed ... ")
+                        self.update()
                         log.write('LINE', 0, 'Kd edge suppressed')
                         self.pid_edge.setKd(self.limited_kd)
                         limited[1][1] = True
@@ -321,22 +279,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 heater.close(self.pwm_2)
 
                 sys.exit()
+            '''
 
     def handleStop(self):
+
         self.runButton.setEnabled(True)
-        log.close()
-        thm.close(self.thm1)
-        thm.close(self.thm2)
-        heater.close(self.pwm_1)
-        heater.close(self.pwm_2)
 
-        coefficients_center = self.pid_center.getPID()
-        coefficients_edge = self.pid_edge.getPID()
+        self.stopButton.setEnabled(False)
 
-        log.createPlot(self.times, self.cent_temps, self.edge_temps, self.heat_time, coefficients_center,
-                       coefficients_edge,
-                       self.pid_center_val, self.pid_edge_val, self)
-        sys.exit()
+        self.outputMessage.append("The process has finished. Please ensure everything is turned off.")
+        self.outputMessage.update()
+
+
 
     def checkInput(self):
         statusTemp = self.checkTemp()
@@ -480,5 +434,10 @@ class MainWindow(QtWidgets.QMainWindow):
             return False
 
 
+if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+    window = MainWindow()
 
+    window.show()
+    sys.exit(app.exec_())
 

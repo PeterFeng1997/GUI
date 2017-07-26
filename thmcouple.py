@@ -1,97 +1,63 @@
 '''
 
     ************************************************************************
-    *   FILE NAME:      heater.py
-    *   AUTHOR:         Dylan Vogel, Peter Feng
-    *   PURPOSE:        This file contains functions for heater control using PWM.
+    *   FILE NAME:      thmcouple.py
+    *   AUTHORS:         Dylan Vogel, Peter Feng
+    *   PURPOSE:        This file contains functions related to thermocouple
+    *                   measurement via the MAX31855.
+    *
+    *   EXTERNAL REFERENCES:    spidev
     *
     *
-    *   EXTERNAL REFERENCES:    RPi.GPIO, thmcouple
-    *
-    *
-    *   NOTES:          The only function you'll likely need to change is the constants
-    *                   in initial_heating_time based on the thermal mass you're trying to heat.
-    *
-    *                   You could base these on calculations which take into account your input
-    *                   wattage, thermal volume, convection, etc., but I find that it's easier to run
-    *                   a characterization test and adjust based on that.
+    *   NOTES:          The read function could be modified to read 32 bits instead
+    *                   of 16 and check what type of fault is encountered.
     *
     *   REVISION HISTORY:
     *
-    *                   2017-05-22: Created file. Wrote basic functions.
-    *                   2017-05-23: Wrote initial_heating_time based on empirically
-    *                               derived values for our setup.
-    *
+    *                   2017-05-22: Wrote setup and read functions.
+    *                   2017-05-23: Added comments.
 
 '''
+import spidev
 
+global READBYTE
+READBYTE = [0x00, 0x00]
 
-import RPi.GPIO as GPIO
-import thmcouple as thm
-
-global PWM_PIN_1, PWM_PIN_2, freq
-
-# GPIO, not board pins on the RPi
-PWM_PIN_1 = 23      # Center
-PWM_PIN_2 = 24      # Edge
-
-# PWM frequency in Hz
-freq = 500
-
+#Set up 1st thermocouple
 def setup1():
+   tc_1 = spidev.SpiDev()
+   tc_1.open(0,0)
+   tc_1.max_speed_hz = 5000000
+   return tc_1
 
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(PWM_PIN_1, GPIO.OUT)
-
-    pwm_1 = GPIO.PWM(PWM_PIN_1, freq)
-
-    # Start both PWM channels at 0% duty cycle.
-    pwm_1.start(0)
-
-    return pwm_1
-
+#Set up 2nd thermocouple
 def setup2():
+   tc_2 = spidev.SpiDev()
+   tc_2.open(0,1)
+   tc_2.max_speed_hz = 5000000
+   return tc_2
 
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(PWM_PIN_2, GPIO.OUT)
+def read(thmcouple):
+    # Assume the input is either 1 or 2, and default to 1 if another value is entered.
+    rec = thmcouple.xfer2(READBYTE)
 
-    pwm_2 = GPIO.PWM(PWM_PIN_2, freq)
+    # Check the fault bit of the returned message
+    if rec[1] & 0x01:
+        fault = 1
+        #print "A fault was encountered by the MAX31855"
+    else:
+        fault = 0
 
-    # Start both PWM channels at 0% duty cycle.
-    pwm_2.start(0)
+    # Convert the 16-bit returned number to the 14-bit temp value.
+    data = (rec[0] << 6) | (rec[1] >> 2)
 
-    return pwm_2
+    # Check for negatives
+    if data >> 13:
+        temp = float((int(data) / 4.0) - 2048)
+    else:
+        temp = float(data / 4.0)
 
-def initial_heating_time(temp1, temp2, work_temp, thm_1, thm_2):
-    # Apply some math to figure out how long to heat for.
+    return temp
 
-    temp1 = thm.read(thm_1)
-    temp2 = thm.read(thm_2)
-    avg = (temp1 + temp2) / 2.0
-
-    heating_time = ((work_temp - avg) / 2.0) - 4
-
-    return heating_time
-
-def calc_kp(work_temp):
-
-    kp = 0.2 * ((work_temp / 100.0) * (work_temp / 100.0))
-    kp = clamp(kp, 0.2, 1)
-
-    return kp
-
-def update_temp(temp_avg, temp):
-    # Simple weighting scheme to smooth out large variations.
-
-    new_temp = ((temp_avg * 2.0) + temp) / 3.0
-    return new_temp
-
-def change_duty(duty_1, duty_2, pwm_1, pwm_2):
-    pwm_1.ChangeDutyCycle(duty_1)
-    pwm_2.ChangeDutyCycle(duty_2)
-
-def clamp(n, minn, maxn):
-    return max(min(n, maxn), minn)
-
-def close(pwm):
-    pwm.stop()
+def close(thmcouple):
+    thmcouple.close()

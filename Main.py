@@ -48,6 +48,7 @@ import controller
 ################################################################################
 ''' EDIT THESE; THESE ARE THE PID COEFFICIENTS '''
 
+'''
 
 def pid_setup_center(work_temp, P, I, D): #change
 
@@ -72,7 +73,7 @@ def pid_setup_edge(work_temp, P, I, D): #change
     pid_edge.SetPoint = work_temp
 
     return pid_edge
-
+'''
 
 if __name__ == "__main__":
 
@@ -98,6 +99,7 @@ if __name__ == "__main__":
 
 
 
+    '''
     #heat_time = input('Enter bonding time in seconds 0-3600s: ')
 
     # The frequency at which main.py will write to the console and log file.
@@ -152,7 +154,7 @@ if __name__ == "__main__":
 
 
     print ("Setup completed, initial heating  ... ")
-
+    
     try:
         # Function stored in heater.py. Algorithm based on empirical results.
         heat_time = heater.initial_heating_time(t_center, t_edge, work_temp, thm1, thm2)
@@ -266,4 +268,6 @@ if __name__ == "__main__":
         heater.close(pwm_2)
 
         sys.exit()
+    
+    '''
 
